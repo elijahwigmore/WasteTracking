@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">WasteTracking</string>
     <string name="action_settings">Settings</string>
+    <string name="default_log_text">No record history found on device!</string>
+    <string name="debug_tony_presto_card">04714E72334680</string>
+    <string name="debug_tony_other_presto_card">041A2A72BB3380</string>
 </resources>

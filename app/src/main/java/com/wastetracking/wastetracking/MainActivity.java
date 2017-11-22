@@ -8,10 +8,14 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.IntentFilter.MalformedMimeTypeException;
 import android.nfc.NfcAdapter;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import android.util.Log;
+
+import java.util.ArrayList;
 
 /**
  * Activity for reading data from an NDEF Tag.
@@ -23,15 +27,17 @@ public class MainActivity extends Activity {
     public static final String MIME_TEXT_PLAIN = "text/plain";
     public static final String TAG = "NfcDemo";
 
-    private TextView mTextView;
+    private ListView mListView;
     private NfcAdapter mNfcAdapter;
+    ArrayAdapter<String> mArrayAdapter;
+
+    private LocalCache mLocalCache;
+    private ArrayList<String> mCachedData;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        mTextView = (TextView) findViewById(R.id.main_text_view);
 
         mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
 
@@ -44,12 +50,29 @@ public class MainActivity extends Activity {
         }
 
         if (!mNfcAdapter.isEnabled()) {
-            mTextView.setText("NFC is disabled.");
+            Toast.makeText(this, "NFC is disabled!", Toast.LENGTH_LONG).show();
         } else {
-            mTextView.setText("NFC is active!");
+            Toast.makeText(this, "NFC is active!", Toast.LENGTH_LONG).show();
         }
 
         handleIntent(getIntent());
+
+        mLocalCache = new LocalCache(this);
+        mCachedData = mLocalCache.getAllEntries();
+
+        if (mCachedData.size() == 0) {
+            mCachedData.add(getString(R.string.default_log_text));
+            //mTextView.setText(R.string.default_log_text);
+        }
+
+        // Populate the main list with the cached data
+        mListView = (ListView) findViewById(R.id.listview_scan_log);
+
+        // Set up the array adapter to load the cached data in the main list view
+        mArrayAdapter = new ArrayAdapter<String>(
+                this, android.R.layout.simple_list_item_1, mCachedData
+        );
+        mListView.setAdapter(mArrayAdapter);
     }
 
     @Override
@@ -96,14 +119,14 @@ public class MainActivity extends Activity {
             // TODO: Properly treat when NDEF_DISCOVERED
 
             String placeholder = "NDEF payload detected! Currently not able to process!";
-            mTextView.setText(placeholder);
+            Toast.makeText(this, placeholder, Toast.LENGTH_LONG).show();
 
         } else if (NfcAdapter.ACTION_TECH_DISCOVERED.equals(action)) {
             Log.d(TAG, "Scan triggered TECH_DISCOVERED");
             // TODO: Properly treat when TAG_DISCOVERED
 
             String placeholder = "NDEF payload detected, but cannot be mapped to a MIME type or URI!";
-            mTextView.setText(placeholder);
+            Toast.makeText(this, placeholder, Toast.LENGTH_LONG).show();
 
         } else if (NfcAdapter.ACTION_TAG_DISCOVERED.equals(action)) {
             Log.d(TAG, "No chip technology found, but there is a tag!");
@@ -117,23 +140,14 @@ public class MainActivity extends Activity {
                 converted_string = "Failed to convert!";
             }
 
-            String referenced_value = "Not found in device records!";
+            String concat_string = "Scanned Value: " + converted_string;
 
-            switch (converted_string) {
+            // Update the local storage with this new scanned value
+            mLocalCache.insertEntry(Utility.getCurrentTimeStamp(), concat_string);
 
-                case ("04714E72334680"):
-                    referenced_value = "Tony's Presto Card";
-                    break;
-
-                case ("041A2A72BB3380"):
-                    referenced_value = "Expired Presto Card";
-                    break;
-            }
-
-            String concat_string = "Scanned Hexadecimal Value: " + converted_string + "\n"
-                    + "Cross-Referenced Value: " +  referenced_value;
-
-            mTextView.setText(concat_string);
+            // Update the current main text by changing the data and notifying the adapter
+            mCachedData.add(Utility.getCurrentTimeStamp() + ", " + concat_string);
+            mArrayAdapter.notifyDataSetChanged();
         }
     }
 
