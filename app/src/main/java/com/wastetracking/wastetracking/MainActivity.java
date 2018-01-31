@@ -13,6 +13,15 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import io.realm.ObjectServerError;
+import io.realm.Realm;
+import io.realm.RealmAsyncTask;
+import io.realm.RealmConfiguration;
+import io.realm.SyncConfiguration;
+import io.realm.SyncCredentials;
+import io.realm.SyncUser;
+
+
 import android.util.Log;
 
 import java.util.ArrayList;
@@ -37,6 +46,37 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        Log.d(TAG, "Initializing Realm");
+        // For Testing - Constant server address
+        String serverUrl = "http://35.153.34.189:9080/";
+        String realmUrl = "http://35.153.34.189:9080/auth";
+        String serverUsername = "realm-admin";
+        String serverPassword = "";
+
+        // Initiate Realm Authorization
+        SyncCredentials creds = SyncCredentials.usernamePassword(serverUsername, serverPassword);
+
+        SyncUser.Callback<SyncUser> callback = new SyncUser.Callback<SyncUser>() {
+
+            @Override
+            public void onSuccess(SyncUser result) {
+                Log.d(TAG, "Realm Authentication Successful!");
+                Log.d(TAG, result.getIdentity());
+                Log.d(TAG, result.toJson());
+            }
+
+            @Override
+            public void onError(ObjectServerError error) {
+                Log.d(TAG, "Realm Authentication Failed!");
+                Log.d(TAG, error.getErrorMessage());
+            }
+        };
+
+        SyncUser.loginAsync(creds, realmUrl, callback);
+
+        Log.d(TAG, "Finished Realm initialization");
+
         setContentView(R.layout.activity_main);
 
         mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
