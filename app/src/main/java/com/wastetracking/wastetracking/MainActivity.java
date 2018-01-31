@@ -47,7 +47,6 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        Log.d(TAG, "Initializing Realm");
         // For Testing - Constant server address
         String serverUrl = "http://35.153.34.189:9080/";
         String realmUrl = "http://35.153.34.189:9080/auth";
@@ -74,8 +73,8 @@ public class MainActivity extends Activity {
         };
 
         SyncUser.loginAsync(creds, realmUrl, callback);
+        Log.d(TAG, "Finished setting up Realm authorization.");
 
-        Log.d(TAG, "Finished Realm initialization");
 
         setContentView(R.layout.activity_main);
 
@@ -113,6 +112,9 @@ public class MainActivity extends Activity {
                 this, android.R.layout.simple_list_item_1, mCachedData
         );
         mListView.setAdapter(mArrayAdapter);
+
+        // Start the Realm Activity now that everything should be set up
+        startActivity(new Intent(this, RealmActivity.class));
     }
 
     @Override
