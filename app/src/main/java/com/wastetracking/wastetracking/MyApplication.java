@@ -3,7 +3,10 @@ package com.wastetracking.wastetracking;
 import android.app.Application;
 import android.util.Log;
 
+import com.wastetracking.wastetracking.model.MyMigration;
+
 import io.realm.Realm;
+import io.realm.RealmConfiguration;
 import io.realm.log.RealmLog;
 
 /**
@@ -19,6 +22,12 @@ public class MyApplication extends Application {
         super.onCreate();
 
         Realm.init(this);
+        RealmConfiguration config = new RealmConfiguration.Builder()
+                // .name("my_realm.realm")
+                .schemaVersion(1)
+                .migration(new MyMigration())
+                .build();
+        Realm.setDefaultConfiguration(config);
 
         if (BuildConfig.DEBUG) {
             RealmLog.setLevel(Log.DEBUG);

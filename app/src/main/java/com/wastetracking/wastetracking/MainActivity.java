@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.IntentFilter.MalformedMimeTypeException;
 import android.nfc.NfcAdapter;
+import android.text.style.TtsSpan;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -24,7 +25,11 @@ import io.realm.SyncUser;
 
 import android.util.Log;
 
+import com.wastetracking.wastetracking.model.Scan;
+
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 /**
  * Activity for reading data from an NDEF Tag.
@@ -75,7 +80,6 @@ public class MainActivity extends Activity {
         SyncUser.loginAsync(creds, realmUrl, callback);
         Log.d(TAG, "Finished setting up Realm authorization.");
 
-
         setContentView(R.layout.activity_main);
 
         mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
@@ -95,6 +99,28 @@ public class MainActivity extends Activity {
         }
 
         handleIntent(getIntent());
+
+        // get Realm data
+        try {
+            Realm realm = Realm.getDefaultInstance();
+            List<Scan> allScans = realm.where(Scan.class).findAll();
+            for(Scan s : allScans) {
+                Log.e(TAG, s.getRFIDValue());
+            }
+            Log.e(TAG, String.valueOf(allScans.size())); // still at empty records
+
+            realm.beginTransaction();
+            Scan scan = realm.createObject(Scan.class);
+            scan.setRFIDValue("22413");
+            scan.setTimestamp(new Date());
+            realm.commitTransaction();
+        }
+        catch (Exception e) {
+            Log.e(TAG, "problem bro");
+        }
+//        finally {
+//            realm.close();
+//        }
 
         mLocalCache = new LocalCache(this);
         mCachedData = mLocalCache.getAllEntries();
