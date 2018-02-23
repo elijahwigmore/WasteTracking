@@ -1,6 +1,5 @@
 package com.wastetracking.wastetracking;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
@@ -9,6 +8,8 @@ import android.util.Log;
 import io.realm.Realm;
 import io.realm.SyncConfiguration;
 import io.realm.SyncUser;
+
+import com.wastetracking.wastetracking.Model.DateValue;
 
 /**
  * Created by xcode on 1/31/18.
@@ -53,6 +54,30 @@ public class RealmActivity extends AppCompatActivity{
         } else {
             Log.d(TAG, "We didn't get the Realm!");
         }
+
+        // Testing how Realm transactions work
+        // https://stackoverflow.com/questions/41953956/realm-order-of-insert-or-update
+        // https://github.com/realm/realm-java/blob/master/examples/objectServerExample/src/main
+        // /java/io/realm/examples/objectserver/CounterActivity.java
+        mRealm.executeTransaction(new Realm.Transaction() {
+
+            @Override
+            public void execute(Realm realm) {
+                DateValue pair = realm.where(DateValue.class).findFirstAsync();
+
+                // The commented parts creates a new entry
+                // Note: inserting duplicates will create error, so maybe insertOrUpdate works
+                //DateValue pair = new DateValue("fake date", "fake value");
+                //realm.insert(pair);
+
+                if (pair == null) {
+                    Log.d(TAG, "Realm object pair not found");
+                } else {
+                    Log.d(TAG, pair.getDate());
+                    Log.d(TAG, pair.getRFIDValue());
+                }
+            }
+        });
     }
 
     @Override
