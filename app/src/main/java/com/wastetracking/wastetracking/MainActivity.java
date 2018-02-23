@@ -1,5 +1,6 @@
 package com.wastetracking.wastetracking;
 
+import android.Manifest;
 import android.os.Bundle;
 
 import android.app.Activity;
@@ -9,6 +10,8 @@ import android.content.IntentFilter;
 import android.content.IntentFilter.MalformedMimeTypeException;
 import android.nfc.NfcAdapter;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.ActivityCompat;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
@@ -17,6 +20,8 @@ import android.widget.Toast;
 import io.realm.ObjectServerError;
 import io.realm.SyncCredentials;
 import io.realm.SyncUser;
+
+import android.support.annotation.NonNull;
 
 
 import android.util.Log;
@@ -28,7 +33,7 @@ import java.util.ArrayList;
  *
  *
  */
-public class MainActivity extends Activity {
+public class MainActivity extends AppCompatActivity implements ActivityCompat.OnRequestPermissionsResultCallback {
 
     public static final String MIME_TEXT_PLAIN = "text/plain";
     public static final String TAG = "NfcDemo";
@@ -81,6 +86,13 @@ public class MainActivity extends Activity {
         SyncUser.loginAsync(creds, realmUrl, callback);
         Log.d(TAG, "Finished setting up Realm authorization.");
 
+        // Prompt the special permissions dialog box
+        ActivityCompat.requestPermissions(MainActivity.this, new String[]{
+                Manifest.permission.NFC,
+                Manifest.permission.INTERNET,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+
         // Enable location management
         mDeviceLocationManager = new DeviceLocationManager(getApplicationContext());
         Log.d(TAG, mDeviceLocationManager.getLocationString());
@@ -130,7 +142,9 @@ public class MainActivity extends Activity {
         debugButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.d(TAG, mDeviceLocationManager.getLocationString());
+                String location = mDeviceLocationManager.getLocationString();
+                Log.d(TAG, location);
+                Toast.makeText(v.getContext(), location, Toast.LENGTH_LONG).show();
             }
         });
 
