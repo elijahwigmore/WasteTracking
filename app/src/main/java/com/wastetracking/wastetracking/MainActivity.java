@@ -8,16 +8,13 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.IntentFilter.MalformedMimeTypeException;
 import android.nfc.NfcAdapter;
+import android.support.design.widget.FloatingActionButton;
+import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import io.realm.ObjectServerError;
-import io.realm.Realm;
-import io.realm.RealmAsyncTask;
-import io.realm.RealmConfiguration;
-import io.realm.SyncConfiguration;
 import io.realm.SyncCredentials;
 import io.realm.SyncUser;
 
@@ -40,6 +37,8 @@ public class MainActivity extends Activity {
     private NfcAdapter mNfcAdapter;
     ArrayAdapter<String> mArrayAdapter;
 
+    private DeviceLocationManager mDeviceLocationManager;
+
     private LocalCache mLocalCache;
     private ArrayList<String> mCachedData;
 
@@ -60,24 +59,36 @@ public class MainActivity extends Activity {
 
             @Override
             public void onSuccess(SyncUser result) {
-                Log.d(TAG, "Realm Authentication Successful!");
+                Log.d(TAG, getApplicationContext().getResources().getString(R.string.realm_authen_bad));
                 Log.d(TAG, result.getIdentity());
                 Log.d(TAG, result.toJson());
             }
 
             @Override
             public void onError(ObjectServerError error) {
-                Log.d(TAG, "Realm Authentication Failed!");
-                Log.d(TAG, error.getErrorMessage());
+                Log.e(TAG, getString(R.string.realm_authen_bad));
+
+                String errorExactMessage = error.getErrorMessage();
+
+                if (errorExactMessage == null) {
+                    errorExactMessage = getString(R.string.generic_unknown_error);
+                }
+
+                Log.e(TAG, errorExactMessage);
             }
         };
 
         SyncUser.loginAsync(creds, realmUrl, callback);
         Log.d(TAG, "Finished setting up Realm authorization.");
 
+        // Enable location management
+        mDeviceLocationManager = new DeviceLocationManager(getApplicationContext());
+        Log.d(TAG, mDeviceLocationManager.getLocationString());
 
+        // Set up activity main as the main layout
         setContentView(R.layout.activity_main);
 
+        // Set up NFC
         mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
 
         if (mNfcAdapter == null) {
@@ -96,6 +107,7 @@ public class MainActivity extends Activity {
 
         handleIntent(getIntent());
 
+        // Set up local cache data, and populate with saved data upon starting up
         mLocalCache = new LocalCache(this);
         mCachedData = mLocalCache.getAllEntries();
 
@@ -113,15 +125,26 @@ public class MainActivity extends Activity {
         );
         mListView.setAdapter(mArrayAdapter);
 
+        // Give a test button the ability to get the current location.
+        FloatingActionButton debugButton = (FloatingActionButton) findViewById(R.id.debug_button);
+        debugButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.d(TAG, mDeviceLocationManager.getLocationString());
+            }
+        });
+
         // Start the Realm Activity now that everything should be set up
-        startActivity(new Intent(this, RealmActivity.class));
+        Intent realmIntent = new Intent(this, RealmActivity.class);
+        startActivity(realmIntent);
+
     }
 
     @Override
     protected void onResume() {
         super.onResume();
 
-        /**
+        /*
          * It's important, that the activity is in the foreground (resumed). Otherwise
          * an IllegalStateException is thrown.
          */
@@ -130,7 +153,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onPause() {
-        /**
+        /*
          * Call this before onPause, otherwise an IllegalArgumentException is thrown as well.
          */
         stopForegroundDispatch(this, mNfcAdapter);
@@ -140,7 +163,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onNewIntent(Intent intent) {
-        /**
+        /*
          * This method gets called, when a new Intent gets associated with the current activity instance.
          * Instead of creating a new activity, onNewIntent will be called. For more information have a look
          * at the documentation.
@@ -148,7 +171,7 @@ public class MainActivity extends Activity {
          * In our case this method gets called, when the user attaches a Tag to the device.
          */
         //super.onNewIntent(intent);
-        Log.d(TAG, "GOT TO HERE YO");
+        Log.d(TAG, "onNewIntent");
         handleIntent(intent);
     }
 

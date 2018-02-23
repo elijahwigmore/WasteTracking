@@ -4,4 +4,8 @@
     <string name="default_log_text">No record history found on device!</string>
     <string name="debug_tony_presto_card">04714E72334680</string>
     <string name="debug_tony_other_presto_card">041A2A72BB3380</string>
+    <string name="generic_unknown_error">Error message not available.</string>
+    <string name="realm_url_auth">http://35.153.34.189:9080/auth</string>
+    <string name="realm_authen_good">Server Authentication Successful!</string>
+    <string name="realm_authen_bad">Server Authentication Failed!</string>
 </resources>
