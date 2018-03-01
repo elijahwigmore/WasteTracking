@@ -70,12 +70,14 @@ public class RealmActivity extends AppCompatActivity{
                 //DateValue pair = new DateValue("fake date", "fake value");
                 //realm.insert(pair);
 
+                /*
                 if (pair == null) {
                     Log.d(TAG, "Realm object pair not found");
                 } else {
                     Log.d(TAG, pair.getDate());
                     Log.d(TAG, pair.getRFIDValue());
                 }
+                */
             }
         });
     }
