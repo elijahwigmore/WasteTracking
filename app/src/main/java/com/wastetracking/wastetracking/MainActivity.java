@@ -36,7 +36,7 @@ import java.util.ArrayList;
 public class MainActivity extends AppCompatActivity implements ActivityCompat.OnRequestPermissionsResultCallback {
 
     public static final String MIME_TEXT_PLAIN = "text/plain";
-    public static final String TAG = "NfcDemo";
+    public static final String TAG = "MainActivityMain";
 
     private ListView mListView;
     private NfcAdapter mNfcAdapter;
@@ -64,7 +64,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
 
             @Override
             public void onSuccess(SyncUser result) {
-                Log.d(TAG, getApplicationContext().getResources().getString(R.string.realm_authen_bad));
+                Log.d(TAG, getApplicationContext().getResources().getString(R.string.realm_authen_good));
                 Log.d(TAG, result.getIdentity());
                 Log.d(TAG, result.toJson());
             }
@@ -79,6 +79,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
                     errorExactMessage = getString(R.string.generic_unknown_error);
                 }
 
+                Log.e(TAG, error.toString());
                 Log.e(TAG, errorExactMessage);
             }
         };

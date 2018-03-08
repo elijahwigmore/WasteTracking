@@ -10,6 +10,9 @@ import io.realm.SyncConfiguration;
 import io.realm.SyncUser;
 
 import com.wastetracking.wastetracking.Model.DateValue;
+import com.wastetracking.wastetracking.Model.RFIDScan;
+
+import java.util.Date;
 
 /**
  * Created by xcode on 1/31/18.
@@ -63,7 +66,11 @@ public class RealmActivity extends AppCompatActivity{
 
             @Override
             public void execute(Realm realm) {
-                DateValue pair = realm.where(DateValue.class).findFirstAsync();
+                //DateValue pair = realm.where(DateValue.class).findFirstAsync();
+                RFIDScan testPair = new RFIDScan();
+                testPair.setRFIDValue("delete value");
+                testPair.setTimestamp(new Date());
+                realm.insert(testPair);
 
                 // The commented parts creates a new entry
                 // Note: inserting duplicates will create error, so maybe insertOrUpdate works
@@ -80,6 +87,9 @@ public class RealmActivity extends AppCompatActivity{
                 */
             }
         });
+
+        // Test for consistency
+        //closeRealm();
     }
 
     @Override
