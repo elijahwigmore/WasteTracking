@@ -62,6 +62,8 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        startActivity(new Intent(this, LoginActivity.class));
+
         // For Testing - Constant server address
         String serverUrl = "http://35.153.34.189:9080/";
         String realmUrl = "http://35.153.34.189:9080/auth";
@@ -124,9 +126,9 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         }
 
         if (!mNfcAdapter.isEnabled()) {
-            Toast.makeText(this, "NFC is disabled!", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "   NFC is disabled!   ", Toast.LENGTH_LONG).show();
         } else {
-            Toast.makeText(this, "NFC is active!", Toast.LENGTH_LONG).show();
+            //Toast.makeText(this, "NFC is active!", Toast.LENGTH_LONG).show();
         }
 
         handleIntent(getIntent());
@@ -230,7 +232,9 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
                 converted_string = "Failed to convert!";
             }
 
-            String concat_string = "Scanned Value: " + converted_string;
+            String location = mDeviceLocationManager.getLocationString();
+
+            String concat_string = "\nTag Value: " + converted_string + "\nLocation: " + location;
 
             // Update the local storage with this new scanned value
             mLocalCache.insertEntry(Utility.getCurrentTimeStamp(), concat_string);
@@ -242,7 +246,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
             }
 
             // Update the current main text by changing the data and notifying the adapter
-            mCachedData.add(Utility.getCurrentTimeStamp() + ", " + concat_string);
+            mCachedData.add(Utility.getCurrentTimeStamp() + "\n" + concat_string);
             mArrayAdapter.notifyDataSetChanged();
         }
     }

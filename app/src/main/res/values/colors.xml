@@ -3,4 +3,19 @@
     <color name="colorPrimary">#607D8B</color>
     <color name="colorPrimaryDark">#455A64</color>
     <color name="colorAccent">#FF5252</color>
+
+    <color name="white">#ffffff</color>
+    <color name="black">#000000</color>
+    <color name="blue">#dd5048</color>
+
+    <color name="selected_txt">#dd5048</color>
+    <color name="unselected_txt">#b9bfc8</color>
+
+
+
+    <!--Category Type Tab Color-->
+    <color name="Indicator_tabTextColor">#DCE1EE</color>
+    <color name="Indicator_tabSelectedTextColor">#e92324</color>
+    <color name="tabindiacator_background">#fff</color>
+    <color name="tabIndicator_color">#38bffe</color>
 </resources>

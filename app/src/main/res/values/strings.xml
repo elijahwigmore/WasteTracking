@@ -8,4 +8,6 @@
     <string name="realm_url_auth">http://35.153.34.189:9080/auth</string>
     <string name="realm_authen_good">Server Authentication Successful!</string>
     <string name="realm_authen_bad">Server Authentication Failed!</string>
+
+    <string name="agree">Agree to the privacy policy and the end user licence agreement</string>
 </resources>
