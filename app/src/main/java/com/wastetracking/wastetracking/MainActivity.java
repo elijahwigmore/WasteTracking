@@ -1,6 +1,7 @@
 package com.wastetracking.wastetracking;
 
 import android.Manifest;
+import android.os.AsyncTask;
 import android.os.Bundle;
 
 import android.app.Activity;
@@ -18,6 +19,8 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import io.realm.ObjectServerError;
+import io.realm.Realm;
+import io.realm.SyncConfiguration;
 import io.realm.SyncCredentials;
 import io.realm.SyncUser;
 
@@ -26,7 +29,10 @@ import android.support.annotation.NonNull;
 
 import android.util.Log;
 
+import com.wastetracking.wastetracking.Model.RFIDScan;
+
 import java.util.ArrayList;
+import java.util.Date;
 
 /**
  * Activity for reading data from an NDEF Tag.
@@ -46,6 +52,11 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
 
     private LocalCache mLocalCache;
     private ArrayList<String> mCachedData;
+
+    private String scannedValue = "NO SCANNED VALUE";
+    private static final String mRealmUrl = "realm://35.153.34.189:9080/~/test";
+    private SyncUser mUser;
+    private Realm mRealm;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -149,9 +160,8 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
             }
         });
 
-        // Start the Realm Activity now that everything should be set up
-        Intent realmIntent = new Intent(this, RealmActivity.class);
-        startActivity(realmIntent);
+        // Setup realm on the main thread
+        setupRealm();
 
     }
 
@@ -225,6 +235,12 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
             // Update the local storage with this new scanned value
             mLocalCache.insertEntry(Utility.getCurrentTimeStamp(), concat_string);
 
+            // Push the scanned value into the server
+            boolean hasPushed = RealmPushData(converted_string);
+            if (!hasPushed) {
+                Log.d(TAG, "Cannot push scanned data to Realm server. Data is maintained locally");
+            }
+
             // Update the current main text by changing the data and notifying the adapter
             mCachedData.add(Utility.getCurrentTimeStamp() + ", " + concat_string);
             mArrayAdapter.notifyDataSetChanged();
@@ -266,6 +282,84 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         adapter.disableForegroundDispatch(activity);
     }
 
+    private void setupRealm(){
+        mUser = getLoggedInUser();
+
+        if (mUser != null) {
+
+            // Create a Realm Configuration
+            SyncConfiguration config = new SyncConfiguration.Builder(mUser, mRealmUrl)
+                    .build();
+
+            mRealm = Realm.getInstance(config);
+
+            if (mRealm != null) {
+                Log.d(TAG, "We got a Realm instance!");
+                Log.d(TAG, mRealm.toString());
+                Log.d(TAG, mRealm.getPath());
+            } else {
+                Log.e(TAG, "Failed at setupRealm()");
+            }
+
+        }
+    }
+
+    private SyncUser getLoggedInUser() {
+        SyncUser user = null;
+
+        try {
+            user = SyncUser.currentUser();
+        } catch (IllegalStateException e) {
+            Log.e(TAG, e.getMessage());
+        }
+
+        if (user == null) {
+            Log.e(TAG, "Failed at getLoggedInUser()");
+        }
+
+        return user;
+    }
+
+    // Push a scanned data to the Realm object server
+    public boolean RealmPushData(String newScannedValue) {
+
+        if (mUser != null && mRealm != null && newScannedValue != null) {
+            scannedValue = newScannedValue;
+            return executeRealmTransaction();
+        }
+        return false;
+    }
+
+    private boolean executeRealmTransaction() {
+        try {
+            mRealm.executeTransaction(new Realm.Transaction() {
+
+                @Override
+                public void execute(Realm realm) {
+                    RFIDScan testPair = new RFIDScan();
+                    testPair.setRFIDValue(scannedValue);
+                    testPair.setTimestamp(new Date());
+                    realm.insert(testPair);
+                }
+            });
+
+            Log.d(TAG, "Pushing string data " + scannedValue + " to Realm");
+        } catch (Exception e) {
+            Log.e(TAG, "Failed at executeRealmTransaction()");
+            Log.e(TAG, e.toString());
+            return false;
+        }
+
+        return true;
+    }
+
+
+    // Close Realm if it's not already closed.
+    private void closeRealm() {
+        if (mRealm != null && !mRealm.isClosed()) {
+            mRealm.close();
+        }
+    }
 }
 
 //JD Test Commit
