@@ -1,7 +1,7 @@
 package com.wastetracking.wastetracking;
 
 import android.Manifest;
-import android.os.AsyncTask;
+import android.location.LocationManager;
 import android.os.Bundle;
 
 import android.app.Activity;
@@ -20,17 +20,17 @@ import android.widget.Toast;
 
 import io.realm.ObjectServerError;
 import io.realm.Realm;
+import io.realm.RealmResults;
 import io.realm.SyncConfiguration;
 import io.realm.SyncCredentials;
 import io.realm.SyncUser;
-
-import android.support.annotation.NonNull;
 
 
 import android.util.Log;
 
 import com.wastetracking.wastetracking.Model.RFIDScan;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -50,8 +50,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
 
     private DeviceLocationManager mDeviceLocationManager;
 
-    private LocalCache mLocalCache;
-    private ArrayList<String> mCachedData;
+    private ArrayList<String> mParsedScanData;
 
     private String scannedValue = "NO SCANNED VALUE";
     private static final String mRealmUrl = "realm://35.153.34.189:9080/~/test";
@@ -133,21 +132,16 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
 
         handleIntent(getIntent());
 
-        // Set up local cache data, and populate with saved data upon starting up
-        mLocalCache = new LocalCache(this);
-        mCachedData = mLocalCache.getAllEntries();
+        // Setup realm on the main thread and get Realm data
+        setupRealm();
+        mParsedScanData = getParsedRealmScanData();
 
-        if (mCachedData.size() == 0) {
-            mCachedData.add(getString(R.string.default_log_text));
-            //mTextView.setText(R.string.default_log_text);
-        }
-
-        // Populate the main list with the cached data
+        // Populate the main list with Realm data
         mListView = (ListView) findViewById(R.id.listview_scan_log);
 
         // Set up the array adapter to load the cached data in the main list view
         mArrayAdapter = new ArrayAdapter<String>(
-                this, android.R.layout.simple_list_item_1, mCachedData
+                this, android.R.layout.simple_list_item_1, mParsedScanData
         );
         mListView.setAdapter(mArrayAdapter);
 
@@ -161,10 +155,6 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
                 Toast.makeText(v.getContext(), location, Toast.LENGTH_LONG).show();
             }
         });
-
-        // Setup realm on the main thread
-        setupRealm();
-
     }
 
     @Override
@@ -232,22 +222,19 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
                 converted_string = "Failed to convert!";
             }
 
-            String location = mDeviceLocationManager.getLocationString();
-
-            String concat_string = "\nTag Value: " + converted_string + "\nLocation: " + location;
-
-            // Update the local storage with this new scanned value
-            mLocalCache.insertEntry(Utility.getCurrentTimeStamp(), concat_string);
-
             // Push the scanned value into the server
             boolean hasPushed = RealmPushData(converted_string);
-            if (!hasPushed) {
-                Log.d(TAG, "Cannot push scanned data to Realm server. Data is maintained locally");
-            }
 
             // Update the current main text by changing the data and notifying the adapter
-            mCachedData.add(Utility.getCurrentTimeStamp() + "\n" + concat_string);
-            mArrayAdapter.notifyDataSetChanged();
+            if (hasPushed) {
+                String location = mDeviceLocationManager.getLocationString();
+
+                mParsedScanData.add(getParsedResult(Utility.getCurrentTimeStamp(), converted_string, location));
+                mArrayAdapter.notifyDataSetChanged();
+            }
+            else {
+                Log.d(TAG, "Cannot push scanned data to Realm server.");
+            }
         }
     }
 
@@ -306,6 +293,34 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
             }
 
         }
+    }
+
+    private ArrayList<String> getParsedRealmScanData() {
+        RealmResults<RFIDScan> results = mRealm.where(RFIDScan.class).findAll();
+        return getParsedScanDataFromRealmData(results);
+    }
+
+    private ArrayList<String> getParsedScanDataFromRealmData(RealmResults<RFIDScan> results) {
+        ArrayList<String> parsedResults = new ArrayList<String>();
+        for (RFIDScan scan : results) {
+            parsedResults.add(getParsedResult(scan));
+        }
+        return parsedResults;
+    }
+
+    private String getParsedResult(RFIDScan scan) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String timestampStr = sdf.format(scan.getTimestamp());
+
+        return getParsedResult(timestampStr,
+                               scan.getRFIDValue(),
+                               mDeviceLocationManager.getLocationString());
+    }
+
+    private String getParsedResult(String timestamp, String RFIDValue, String location) {
+        return timestamp + "\n\n" +
+                "Tag Value: " + RFIDValue + "\n" +
+                "Location: " + location;
     }
 
     private SyncUser getLoggedInUser() {
