@@ -1,7 +1,9 @@
 package com.wastetracking.wastetracking;
 
 import android.Manifest;
+import android.content.Context;
 import android.location.LocationManager;
+import android.os.Build;
 import android.os.Bundle;
 
 import android.app.Activity;
@@ -10,6 +12,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.IntentFilter.MalformedMimeTypeException;
 import android.nfc.NfcAdapter;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -17,6 +21,7 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
+import android.support.design.widget.Snackbar;
 
 import io.realm.ObjectServerError;
 import io.realm.Realm;
@@ -231,6 +236,9 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
 
                 mParsedScanData.add(getParsedResult(Utility.getCurrentTimeStamp(), converted_string, location));
                 mArrayAdapter.notifyDataSetChanged();
+
+                // vibrate phone and show snackbar
+                notifyUserScanSuccessful();
             }
             else {
                 Log.d(TAG, "Cannot push scanned data to Realm server.");
@@ -321,6 +329,29 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         return timestamp + "\n\n" +
                 "Tag Value: " + RFIDValue + "\n" +
                 "Location: " + location;
+    }
+
+    private void notifyUserScanSuccessful() {
+        int vibrationLengthMilliseconds = 750;
+        vibratePhone(vibrationLengthMilliseconds);
+
+        String snackbarText = "Scan Successful";
+        displaySnackbar(snackbarText);
+    }
+
+    private void vibratePhone(int lengthMilliseconds) {
+        Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            v.vibrate(VibrationEffect.createOneShot(lengthMilliseconds, VibrationEffect.DEFAULT_AMPLITUDE));
+        }else{
+            //deprecated in API 26
+            v.vibrate(lengthMilliseconds);
+        }
+    }
+
+    private void displaySnackbar(String text) {
+        Snackbar snackbar = Snackbar.make(this.findViewById(android.R.id.content), text, Snackbar.LENGTH_SHORT);
+        snackbar.show();
     }
 
     private SyncUser getLoggedInUser() {
