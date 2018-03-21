@@ -2,7 +2,6 @@ package com.wastetracking.wastetracking;
 
 import android.Manifest;
 import android.content.Context;
-import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 
@@ -19,7 +18,9 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.ImageButton;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.support.design.widget.Snackbar;
 
@@ -37,6 +38,7 @@ import com.wastetracking.wastetracking.Model.RFIDScan;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 
 /**
@@ -61,6 +63,12 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
     private static final String mRealmUrl = "realm://35.153.34.189:9080/~/test";
     private SyncUser mUser;
     private Realm mRealm;
+
+    // used for date operations
+    private Calendar calendar;
+    private SimpleDateFormat calendarDateFormat;
+    private static final String CALENDAR_DATE_FORMAT_STRING = "EEE, MMM dd";
+    private static final int CALENDAR_YEAR_OFFSET = 1900;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -139,16 +147,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
 
         // Setup realm on the main thread and get Realm data
         setupRealm();
-        mParsedScanData = getParsedRealmScanData();
-
-        // Populate the main list with Realm data
-        mListView = (ListView) findViewById(R.id.listview_scan_log);
-
-        // Set up the array adapter to load the cached data in the main list view
-        mArrayAdapter = new ArrayAdapter<String>(
-                this, android.R.layout.simple_list_item_1, mParsedScanData
-        );
-        mListView.setAdapter(mArrayAdapter);
+        setupListView();
 
         // Give a test button the ability to get the current location.
         FloatingActionButton debugButton = (FloatingActionButton) findViewById(R.id.debug_button);
@@ -160,6 +159,9 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
                 Toast.makeText(v.getContext(), location, Toast.LENGTH_LONG).show();
             }
         });
+
+        setupArrowButtons();
+        updateSelectedDateText();
     }
 
     @Override
@@ -303,9 +305,58 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         }
     }
 
-    private ArrayList<String> getParsedRealmScanData() {
-        RealmResults<RFIDScan> results = mRealm.where(RFIDScan.class).findAll();
+    private void setupListView() {
+        // need to setup calendar before doing date operations for Realm queries
+        setupCalendar();
+
+        mParsedScanData = getParsedRealmScanDataForSelectedDate();
+        mListView = (ListView) findViewById(R.id.listview_scan_log);
+
+        setArrayAdapter();
+    }
+
+    private void setupCalendar() {
+        calendar = Calendar.getInstance();
+        calendar.setTime(new Date());
+        calendarDateFormat = new SimpleDateFormat(CALENDAR_DATE_FORMAT_STRING);
+    }
+
+    private void setArrayAdapter() {
+        mArrayAdapter = new ArrayAdapter<String>(
+                this, android.R.layout.simple_list_item_1, mParsedScanData
+        );
+
+        mListView.setAdapter(mArrayAdapter);
+    }
+
+    private void updateListView() {
+        // mParsedScanData.clear();
+        mParsedScanData = getParsedRealmScanDataForSelectedDate();
+        setArrayAdapter();
+    }
+
+    private ArrayList<String> getParsedRealmScanDataForSelectedDate() {
+        Date baseSelectedDate = getBaseSelectedDate();
+        Date baseNextDate = getDateAfterBaseSelectedDate();
+
+        RealmResults<RFIDScan> results = mRealm.where(RFIDScan.class)
+                                                .greaterThanOrEqualTo("Timestamp", baseSelectedDate)
+                                                .lessThanOrEqualTo("Timestamp", baseNextDate)
+                                                .findAll();
+
         return getParsedScanDataFromRealmData(results);
+    }
+
+    private Date getBaseSelectedDate() {
+        return new Date((calendar.get(Calendar.YEAR) - CALENDAR_YEAR_OFFSET),
+                        calendar.get(Calendar.MONTH),
+                        calendar.get(Calendar.DAY_OF_MONTH));
+    }
+
+    private Date getDateAfterBaseSelectedDate() {
+        return new Date((calendar.get(Calendar.YEAR) - CALENDAR_YEAR_OFFSET),
+                        calendar.get(Calendar.MONTH),
+                        (calendar.get(Calendar.DAY_OF_MONTH) + 1));
     }
 
     private ArrayList<String> getParsedScanDataFromRealmData(RealmResults<RFIDScan> results) {
@@ -352,6 +403,31 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
     private void displaySnackbar(String text) {
         Snackbar snackbar = Snackbar.make(this.findViewById(android.R.id.content), text, Snackbar.LENGTH_SHORT);
         snackbar.show();
+    }
+
+    private void setupArrowButtons() {
+        ImageButton leftButton = (ImageButton) findViewById(R.id.left_arrow_button);
+        setupArrowButtonOnClickListener(leftButton, -1);
+
+        ImageButton rightButton = (ImageButton) findViewById(R.id.right_arrow_button);
+        setupArrowButtonOnClickListener(rightButton, 1);
+    }
+
+    private void setupArrowButtonOnClickListener(ImageButton button, final int incrementValue) {
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                calendar.add(Calendar.DATE, incrementValue);
+                updateSelectedDateText();
+
+                updateListView();
+            }
+        });
+    }
+
+    private void updateSelectedDateText() {
+        TextView dateTextView = (TextView) findViewById(R.id.date_text);
+        dateTextView.setText(calendarDateFormat.format(calendar.getTime()));
     }
 
     private SyncUser getLoggedInUser() {
