@@ -26,6 +26,7 @@ import android.support.design.widget.Snackbar;
 
 import io.realm.ObjectServerError;
 import io.realm.Realm;
+import io.realm.RealmQuery;
 import io.realm.RealmResults;
 import io.realm.SyncConfiguration;
 import io.realm.SyncCredentials;
@@ -34,6 +35,7 @@ import io.realm.SyncUser;
 
 import android.util.Log;
 
+import com.wastetracking.wastetracking.Model.Address;
 import com.wastetracking.wastetracking.Model.RFIDScan;
 
 import java.text.SimpleDateFormat;
@@ -309,16 +311,22 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         // need to setup calendar before doing date operations for Realm queries
         setupCalendar();
 
-        mParsedScanData = getParsedRealmScanDataForSelectedDate();
         mListView = (ListView) findViewById(R.id.listview_scan_log);
 
-        setArrayAdapter();
+        updateDisplayedData();
     }
 
     private void setupCalendar() {
         calendar = Calendar.getInstance();
         calendar.setTime(new Date());
         calendarDateFormat = new SimpleDateFormat(CALENDAR_DATE_FORMAT_STRING);
+    }
+
+    private void updateDisplayedData() {
+        mParsedScanData = getParsedRealmScanDataForSelectedDate();
+        setArrayAdapter();
+
+        setMissingBinsText();
     }
 
     private void setArrayAdapter() {
@@ -329,22 +337,45 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         mListView.setAdapter(mArrayAdapter);
     }
 
-    private void updateListView() {
-        // mParsedScanData.clear();
-        mParsedScanData = getParsedRealmScanDataForSelectedDate();
-        setArrayAdapter();
+    private void setMissingBinsText() {
+        TextView textView = (TextView) findViewById(R.id.listview_header);
+        long addressCount = mRealm.where(Address.class).count();
+
+        StringBuilder builder = new StringBuilder();
+        builder.append("Missing bins - (")
+                .append(mArrayAdapter.getCount())
+                .append("/")
+                .append(addressCount)
+                .append(")");
+
+        textView.setText(builder.toString());
     }
 
     private ArrayList<String> getParsedRealmScanDataForSelectedDate() {
+        ArrayList<String> rfidValues = getRFIDValuesForSelectedDate();
+        return getAddressesForRFIDValues(rfidValues);
+
+        // return getParsedScanDataFromRealmData(results);
+    }
+
+    private ArrayList<String> getRFIDValuesForSelectedDate() {
         Date baseSelectedDate = getBaseSelectedDate();
         Date baseNextDate = getDateAfterBaseSelectedDate();
 
         RealmResults<RFIDScan> results = mRealm.where(RFIDScan.class)
-                                                .greaterThanOrEqualTo("Timestamp", baseSelectedDate)
-                                                .lessThanOrEqualTo("Timestamp", baseNextDate)
-                                                .findAll();
+                .greaterThanOrEqualTo("Timestamp", baseSelectedDate)
+                .lessThanOrEqualTo("Timestamp", baseNextDate)
+                .findAll();
 
-        return getParsedScanDataFromRealmData(results);
+        ArrayList<String> scannedRFIDValues = new ArrayList<String>();
+        for (RFIDScan result : results) {
+            String rfidValue = result.getRFIDValue();
+            if (!scannedRFIDValues.contains(rfidValue)) {
+                scannedRFIDValues.add(rfidValue);
+            }
+        }
+
+        return scannedRFIDValues;
     }
 
     private Date getBaseSelectedDate() {
@@ -357,6 +388,31 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         return new Date((calendar.get(Calendar.YEAR) - CALENDAR_YEAR_OFFSET),
                         calendar.get(Calendar.MONTH),
                         (calendar.get(Calendar.DAY_OF_MONTH) + 1));
+    }
+
+    private ArrayList<String> getAddressesForRFIDValues(ArrayList<String> rfidValues) {
+        // only use this if we are listing scanned addresses, instead we are listing unscanned addresses
+//        if (rfidValues.size() == 0){
+//            return new ArrayList<String>();
+//        }
+
+        RealmQuery<Address> addressQuery = mRealm.where(Address.class);
+        int i = 0;
+        for (String rfidValue : rfidValues) {
+            if (i > 0) {
+                addressQuery = addressQuery.and(); // use .or() for listing scanned addresses
+            }
+            addressQuery = addressQuery.notEqualTo("RFIDValue", rfidValue); // use equalTo for listing scanned addresses
+            i++;
+        }
+
+        RealmResults<Address> addressObjects = addressQuery.findAll();
+        ArrayList<String> addresses = new ArrayList<String>();
+        for (Address addressObj : addressObjects) {
+            addresses.add(addressObj.getAddress());
+        }
+
+        return addresses;
     }
 
     private ArrayList<String> getParsedScanDataFromRealmData(RealmResults<RFIDScan> results) {
@@ -420,7 +476,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
                 calendar.add(Calendar.DATE, incrementValue);
                 updateSelectedDateText();
 
-                updateListView();
+                updateDisplayedData();
             }
         });
     }

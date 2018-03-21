@@ -16,6 +16,8 @@ public class Address extends RealmObject {
     private String Lat;
     @Required
     private String Lon;
+    @Required
+    private String Address;
 
     public String getRFIDValue() { return RFIDValue; }
 
@@ -28,4 +30,8 @@ public class Address extends RealmObject {
     public String getLon() { return Lon; }
 
     public void setLon(String Lon) { this.Lon = Lon; }
+
+    public String getAddress() { return Address; }
+
+    public void setAddress(String Address) { this.Address = Address; }
 }
