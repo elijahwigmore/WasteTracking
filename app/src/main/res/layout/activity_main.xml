@@ -30,6 +30,18 @@
         android:layout_margin="@dimen/fab_margin"
         app:srcCompat="@android:drawable/ic_menu_mylocation" />
 
+    <Button
+        style="@style/Widget.AppCompat.Button.Colored"
+        android:layout_width="121dp"
+        android:layout_height="wrap_content"
+        android:background="@android:color/holo_green_light"
+        android:textColor="@android:color/white"
+        android:layout_marginLeft="8px"
+        android:layout_marginTop="8px"
+        android:text="Show in map"
+        android:onClick="openMap"
+        />
+
     <!--
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/fab"

@@ -486,6 +486,11 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         dateTextView.setText(calendarDateFormat.format(calendar.getTime()));
     }
 
+    /** Called when the user touches the "SHOW IN MAP" button */
+    public void openMap(View view) {
+        // Do something in response to button click
+    }
+
     private SyncUser getLoggedInUser() {
         SyncUser user = null;
 
