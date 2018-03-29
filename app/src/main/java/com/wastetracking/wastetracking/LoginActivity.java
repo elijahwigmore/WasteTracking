@@ -18,7 +18,7 @@ public class LoginActivity extends Activity{
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.login_fragment);
+        setContentView(R.layout.login_activity);
 
         MyTextView_Roboto_Regular loginButton = (MyTextView_Roboto_Regular) findViewById(R.id.login_button);
 

@@ -29,6 +29,13 @@
             custom:arc_bottom_text="MISSED"/>
             -->
 
+        <ImageView
+            android:layout_marginTop="80dp"
+            android:layout_width="150dp"
+            android:layout_height="150dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_delete_black_24dp" />
+
     </LinearLayout>
 
     <LinearLayout
