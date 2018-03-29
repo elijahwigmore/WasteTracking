@@ -1,6 +1,7 @@
 package com.wastetracking.wastetracking;
 
 import android.Manifest;
+import android.support.v4.app.Fragment;
 import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
@@ -15,6 +16,10 @@ import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentStatePagerAdapter;
+import android.support.v4.view.PagerAdapter;
+import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -66,11 +71,21 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
     private SyncUser mUser;
     private Realm mRealm;
 
+    private LocalCache mLocalCache;
+    private MapManager mMapManager;
+
+    private ViewPager mViewpager;
+    private PagerAdapter mPagerAdapter;
+    private Fragment mMapFragment;
+
     // used for date operations
     private Calendar calendar;
     private SimpleDateFormat calendarDateFormat;
     private static final String CALENDAR_DATE_FORMAT_STRING = "EEE, MMM dd";
     private static final int CALENDAR_YEAR_OFFSET = 1900;
+
+    //Addresses
+    public ArrayList<String> addresses;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -164,6 +179,16 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
 
         setupArrowButtons();
         updateSelectedDateText();
+
+        // Set up map fragment
+        mMapFragment = new MapManagerFragment();
+
+        // Instantiate a ViewPager and a PagerAdapter.
+        mViewpager = (ViewPager) findViewById(R.id.view_pager_id);
+        mPagerAdapter = new ScreenSlidePagerAdapter(getSupportFragmentManager());
+        mViewpager.setAdapter(mPagerAdapter);
+
+
     }
 
     @Override
@@ -407,11 +432,15 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         }
 
         RealmResults<Address> addressObjects = addressQuery.findAll();
-        ArrayList<String> addresses = new ArrayList<String>();
+        addresses = new ArrayList<String>();
         for (Address addressObj : addressObjects) {
             addresses.add(addressObj.getAddress());
         }
 
+        return addresses;
+    }
+
+    public ArrayList<String> getAddresses() {
         return addresses;
     }
 
@@ -545,6 +574,26 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
     private void closeRealm() {
         if (mRealm != null && !mRealm.isClosed()) {
             mRealm.close();
+        }
+    }
+
+    /**
+     * A simple pager adapter that represents 5 ScreenSlidePageFragment objects, in
+     * sequence.
+     */
+    private class ScreenSlidePagerAdapter extends FragmentStatePagerAdapter {
+        public ScreenSlidePagerAdapter(FragmentManager fm) {
+            super(fm);
+        }
+
+        @Override
+        public Fragment getItem(int position) {
+            return mMapFragment;
+        }
+
+        @Override
+        public int getCount() {
+            return 1;
         }
     }
 }

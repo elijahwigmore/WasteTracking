@@ -57,12 +57,28 @@
         android:layout_marginTop="10dp">
     </TextView>
 
-    <ListView
-        android:id="@+id/listview_scan_log"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:transcriptMode="alwaysScroll"
-        android:layout_below="@id/listview_header">
-    </ListView>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/listview_header"
+        android:orientation="vertical">
+
+        <ListView
+            android:id="@+id/listview_scan_log"
+            android:layout_width="fill_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:transcriptMode="alwaysScroll">
+
+        </ListView>
+
+        <android.support.v4.view.ViewPager
+            android:id="@+id/view_pager_id"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1">
+
+        </android.support.v4.view.ViewPager>
+    </LinearLayout>
 
 </android.widget.RelativeLayout>
