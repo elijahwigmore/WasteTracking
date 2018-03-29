@@ -1,7 +1,7 @@
 package com.wastetracking.wastetracking;
 
 import android.Manifest;
-import android.support.v4.app.Fragment;
+import android.support.v4.app.*;
 import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
@@ -14,12 +14,7 @@ import android.content.IntentFilter.MalformedMimeTypeException;
 import android.nfc.NfcAdapter;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
-import android.support.design.widget.FloatingActionButton;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.view.PagerAdapter;
-import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -72,11 +67,15 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
     private Realm mRealm;
 
     private LocalCache mLocalCache;
-    private MapManager mMapManager;
 
-    private ViewPager mViewpager;
+    private NonSwipePageViewer mViewpager;
     private PagerAdapter mPagerAdapter;
+
+    private ArrayList<Fragment> mAllFragments;
+    private Fragment mEmptyFragment;
+    private Fragment mMainFragment;
     private Fragment mMapFragment;
+
 
     // used for date operations
     private Calendar calendar;
@@ -166,6 +165,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         setupRealm();
         setupListView();
 
+        /*
         // Give a test button the ability to get the current location.
         FloatingActionButton debugButton = (FloatingActionButton) findViewById(R.id.debug_button);
         debugButton.setOnClickListener(new View.OnClickListener() {
@@ -176,18 +176,11 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
                 Toast.makeText(v.getContext(), location, Toast.LENGTH_LONG).show();
             }
         });
+        */
 
         setupArrowButtons();
         updateSelectedDateText();
-
-        // Set up map fragment
-        mMapFragment = new MapManagerFragment();
-
-        // Instantiate a ViewPager and a PagerAdapter.
-        mViewpager = (ViewPager) findViewById(R.id.view_pager_id);
-        mPagerAdapter = new ScreenSlidePagerAdapter(getSupportFragmentManager());
-        mViewpager.setAdapter(mPagerAdapter);
-
+        setupFragmentInteractions();
 
     }
 
@@ -268,6 +261,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
 
                 // vibrate phone and show snackbar
                 notifyUserScanSuccessful();
+                setFragmentPage(0);
             }
             else {
                 Log.d(TAG, "Cannot push scanned data to Realm server.");
@@ -588,13 +582,53 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
 
         @Override
         public Fragment getItem(int position) {
-            return mMapFragment;
+            return mAllFragments.get(position);
         }
 
         @Override
         public int getCount() {
-            return 1;
+            return mAllFragments.size();
         }
+    }
+
+    // Setup everything needed for the fragments
+    private void setupFragmentInteractions(){
+        // Set up the fragment interactions
+        mAllFragments = new ArrayList<Fragment>();
+
+        // Set up the "list fragment"
+        mEmptyFragment = new EmptyFragment();
+
+        // Set up a Main Page fragment
+        mMainFragment = new MainFragment();
+
+        // Set up map fragment
+        mMapFragment = new MapManagerFragment();
+
+        // Push in all the map fragments
+        mAllFragments.add(mEmptyFragment);
+        mAllFragments.add(mMainFragment);
+        mAllFragments.add(mMapFragment);
+
+
+
+        // Instantiate a ViewPager and a PagerAdapter.
+        mViewpager = (NonSwipePageViewer) findViewById(R.id.general_view_pager);
+        mPagerAdapter = new ScreenSlidePagerAdapter(getSupportFragmentManager());
+        mViewpager.setAdapter(mPagerAdapter);
+        mViewpager.setOffscreenPageLimit(3);
+        setFragmentPage(1);
+
+    }
+
+    // Programmatically set the page
+    public void setFragmentPage(int page){
+        mViewpager.setCurrentItem(page);
+    }
+
+    @Override
+    public void onBackPressed(){
+        setFragmentPage(1);
     }
 }
 

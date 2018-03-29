@@ -51,7 +51,8 @@
                 android:layout_weight="1"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:id="@+id/to_do_list_touch">
 
                 <ImageView
                     android:layout_width="50dp"
@@ -74,7 +75,8 @@
                 android:layout_width="0dp"
                 android:layout_gravity="center"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:id="@+id/map_overview_touch">
 
                 <ImageView
                     android:layout_width="50dp"
@@ -105,7 +107,8 @@
                 android:layout_weight="1"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:id="@+id/phone_touch">
 
                 <ImageView
                     android:layout_width="50dp"
@@ -128,7 +131,8 @@
                 android:layout_width="0dp"
                 android:layout_gravity="center"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:id="@+id/sms_touch">
 
                 <ImageView
                     android:layout_width="50dp"

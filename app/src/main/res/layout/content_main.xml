@@ -72,13 +72,13 @@
 
         </ListView>
 
-        <android.support.v4.view.ViewPager
-            android:id="@+id/view_pager_id"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_weight="1">
-
-        </android.support.v4.view.ViewPager>
     </LinearLayout>
+
+    <com.wastetracking.wastetracking.NonSwipePageViewer
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/general_view_pager">
+
+    </com.wastetracking.wastetracking.NonSwipePageViewer>
 
 </android.widget.RelativeLayout>

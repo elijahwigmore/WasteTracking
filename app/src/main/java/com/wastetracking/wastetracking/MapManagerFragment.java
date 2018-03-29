@@ -39,6 +39,9 @@ public class MapManagerFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
         //return super.onCreateView(inflater, container, savedInstanceState);
 
+        // Make sure this fragment is persisted
+        this.setRetainInstance(true);
+
         // Inflate the layout for this fragment
         View rootView = inflater.inflate(R.layout.map_fragment, container, false);
 
