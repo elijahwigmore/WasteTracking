@@ -84,6 +84,12 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
     private static final String CALENDAR_DATE_FORMAT_STRING = "EEE, MMM dd";
     private static final int CALENDAR_YEAR_OFFSET = 1900;
 
+    private static final String BLANK_ADDRESS = "";
+
+    private static final String SCAN_SUCCESSFUL_MESSAGE = "Scan Successful";
+    private static final String SCAN_DUPLICATE_MESSAGE = "Bin Already Scanned Today";
+    private static final String SCAN_NA_ADDRESS_MESSAGE = "Tag Not Recognized";
+
     //Addresses
     public ArrayList<String> addresses;
 
@@ -165,6 +171,14 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         // Setup realm on the main thread and get Realm data
         setupRealm();
         setupListView();
+
+        // delete all records from RFIDScan table (to prevent cluttering)
+//        mRealm.executeTransaction(new Realm.Transaction() {
+//            @Override
+//            public void execute(Realm realm) {
+//                realm.delete(RFIDScan.class);
+//            }
+//        });
 
         /*
         // Give a test button the ability to get the current location.
@@ -252,6 +266,14 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
                 converted_string = "Failed to convert!";
             }
 
+            // make sure RFID tag is associated with an address before pushing it to Realm
+            String address = getAddressFromRFIDValue(converted_string);
+            if (address == BLANK_ADDRESS) {
+                Log.d(TAG, "Tag not linked to an address");
+                notifyUserScanError(SCAN_NA_ADDRESS_MESSAGE);
+                return;
+            }
+
             // Push the scanned value into the server
             boolean hasPushed = RealmPushData(converted_string);
 
@@ -259,15 +281,13 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
             if (hasPushed) {
                 String location = mDeviceLocationManager.getLocationString();
 
-                String address = getAddressFromRFIDValue(converted_string);
                 if (mCustomAdapter.addCollectedAddress(address)) {
                     mCustomAdapter.notifyDataSetChanged();
                     updateMissingBinsText();
 
                     notifyUserScanSuccessful();
-                }
-                else {
-                    notifyUserScanDuplicate();
+                } else {
+                    notifyUserScanError(SCAN_DUPLICATE_MESSAGE);
                 }
 
                 setFragmentPage(0);
@@ -467,7 +487,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         if (singleAddressList.size() > 0)
             return singleAddressList.get(0);
         else
-            return "";
+            return BLANK_ADDRESS;
     }
 
     public ArrayList<String> getMissingAddressNames() {
@@ -503,17 +523,13 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
     private void notifyUserScanSuccessful() {
         int vibrationLengthMilliseconds = 750;
         vibratePhone(vibrationLengthMilliseconds);
-
-        String snackbarText = "Scan Successful";
-        displaySnackbar(snackbarText);
+        displaySnackbar(SCAN_SUCCESSFUL_MESSAGE);
     }
 
-    private void notifyUserScanDuplicate() {
+    private void notifyUserScanError(String message) {
         long[] vibrationPattern = {0, 250, 250, 250};
         vibratePhone(vibrationPattern);
-
-        String snackbarText = "Duplicate RFID Tag";
-        displaySnackbar(snackbarText);
+        displaySnackbar(message);
     }
 
     private void vibratePhone(int lengthMilliseconds) {
