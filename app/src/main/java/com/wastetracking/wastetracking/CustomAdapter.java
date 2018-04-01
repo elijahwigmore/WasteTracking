@@ -2,9 +2,13 @@ package com.wastetracking.wastetracking;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.graphics.Typeface;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -15,27 +19,44 @@ import java.util.ArrayList;
 
 public class CustomAdapter extends ArrayAdapter<String> {
 
-    private static final int COLLECTED_COLOUR = Color.argb(255, 100, 255, 100);
+    private static final int COLLECTED_COLOUR = Color.argb(46, 100, 204, 113); // #2ecc71
     private static final int MISSING_COLOUR = Color.WHITE;
 
+    private ArrayList<String> mAllAddresses;
     private ArrayList<String> mCollectedAddresses;
 
-    public CustomAdapter(Context context, int resourceID, ArrayList<String> list) {
-        super(context, resourceID , list);
+    public CustomAdapter(Context context, ArrayList<String> list) {
+        super(context, R.layout.single_list_item, list);
+        mAllAddresses = list;
     }
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        View view = super.getView(position, convertView, parent);
-        setViewBackgroundColor(view);
-        return view;
+        LayoutInflater inflater = LayoutInflater.from(getContext());
+        View rowView = inflater.inflate(R.layout.single_list_item, null, true);
+
+        setText(rowView, position);
+        setImage(rowView, position);
+
+        setViewBackgroundColor(rowView, position);
+        return rowView;
     }
 
-    private void setViewBackgroundColor(View view) {
-        TextView textView = (TextView) view;
-        String text = textView.getText().toString();
+    private void setText(View view, int position) {
+        TextView textView = (TextView) view.findViewById(R.id.list_text);
+        textView.setText(mAllAddresses.get(position));
+    }
 
-        if (text != null && mCollectedAddresses.contains(text))
+    private void setImage(View view, int position) {
+        ImageView imageView = (ImageView) view.findViewById(R.id.list_image);
+        if (mCollectedAddresses.contains(mAllAddresses.get(position)))
+            imageView.setImageResource(R.drawable.ic_check_box_black_24dp);
+        else
+            imageView.setImageResource(R.drawable.ic_check_box_outline_blank_black_24dp);
+    }
+
+    private void setViewBackgroundColor(View view, int position) {
+        if (mCollectedAddresses.contains(mAllAddresses.get(position)))
             view.setBackgroundColor(COLLECTED_COLOUR);
         else
             view.setBackgroundColor(MISSING_COLOUR);

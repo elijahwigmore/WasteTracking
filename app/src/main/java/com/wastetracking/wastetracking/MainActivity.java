@@ -381,7 +381,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
 
     private void setArrayAdapter() {
         mCustomAdapter = new CustomAdapter(
-                this, android.R.layout.simple_list_item_1, mParsedScanData
+                this, mParsedScanData
         );
 
         mCustomAdapter.setCollectedAddresses(getCollectedAddressNames());
@@ -394,7 +394,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         long addressCount = mRealm.where(Address.class).count();
 
         StringBuilder builder = new StringBuilder();
-        builder.append("Missing bins - (")
+        builder.append("Missing Bins - (")
                 .append(mCustomAdapter.getCount() - mCustomAdapter.getCollectedAddressCount())
                 .append("/")
                 .append(addressCount)

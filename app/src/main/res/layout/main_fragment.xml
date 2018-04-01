@@ -36,6 +36,23 @@
             android:layout_gravity="center"
             android:src="@drawable/ic_delete_black_24dp" />
 
+        <com.wastetracking.wastetracking.customfonts.MyTextView_Roboto_Medium
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="LittR™"
+            android:textColor="@color/white"
+            android:textSize="36dp" />
+
+        <com.wastetracking.wastetracking.customfonts.MyTextView_Roboto_Regular
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:gravity="center"
+            android:text="Dashboard, all your essentials in one place."
+            android:textColor="@color/white"
+            android:textSize="13dp" />
+
     </LinearLayout>
 
     <LinearLayout
@@ -72,7 +89,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:layout_marginTop="5dp"
-                    android:text="To-do list"
+                    android:text="To-do List"
                     android:textColor="@color/black"
                     android:textSize="13dp" />
             </LinearLayout>
