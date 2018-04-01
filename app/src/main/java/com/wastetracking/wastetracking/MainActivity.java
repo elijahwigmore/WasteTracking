@@ -53,6 +53,8 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
     public static final String MIME_TEXT_PLAIN = "text/plain";
     public static final String TAG = "MainActivityMain";
 
+    private static final String NFCV = "android.nfc.tech.NfcV";
+
     private ListView mListView;
     private NfcAdapter mNfcAdapter;
     ArrayAdapter<String> mArrayAdapter;
@@ -230,14 +232,16 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
             String placeholder = "NDEF payload detected! Currently not able to process!";
             Toast.makeText(this, placeholder, Toast.LENGTH_LONG).show();
 
-        } else if (NfcAdapter.ACTION_TECH_DISCOVERED.equals(action)) {
+        } /*else if (NfcAdapter.ACTION_TECH_DISCOVERED.equals(action)) {
             Log.d(TAG, "Scan triggered TECH_DISCOVERED");
             // TODO: Properly treat when TAG_DISCOVERED
 
             String placeholder = "NDEF payload detected, but cannot be mapped to a MIME type or URI!";
             Toast.makeText(this, placeholder, Toast.LENGTH_LONG).show();
 
-        } else if (NfcAdapter.ACTION_TAG_DISCOVERED.equals(action)) {
+        }*/
+        // moved ACTION_TECH_DISCOVERED here so NfcV tags can be properly processed with our code
+        else if (NfcAdapter.ACTION_TAG_DISCOVERED.equals(action) || NfcAdapter.ACTION_TECH_DISCOVERED.equals(action)) {
             Log.d(TAG, "No chip technology found, but there is a tag!");
 
             byte[] extracted_bytes = intent.getByteArrayExtra(NfcAdapter.EXTRA_ID);
@@ -281,7 +285,10 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         final PendingIntent pendingIntent = PendingIntent.getActivity(activity.getApplicationContext(), 0, intent, 0);
 
         IntentFilter[] filters = new IntentFilter[1];
-        String[][] techList = new String[][]{};
+
+        // add NfcV polling (NfcA already included by default)
+        String[][] techList = new String[1][1];
+        techList[0][0] = NFCV;
 
         // Notice that this is the same filter as in our manifest.
         filters[0] = new IntentFilter();
