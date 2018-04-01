@@ -1,15 +1,20 @@
 package com.wastetracking.wastetracking;
 
 
+import android.Manifest;
+import android.content.Context;
+import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -23,6 +28,8 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import static io.realm.internal.SyncObjectServerFacade.getApplicationContext;
 
 /**
  * Created by VR-Visitor on 3/29/2018.
@@ -114,7 +121,18 @@ public class MapManagerFragment extends Fragment {
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(Toronto));
                 mMap.animateCamera(CameraUpdateFactory.zoomTo(10));
 
-                mMap.setMyLocationEnabled(true);
+                if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION)
+                        == PackageManager.PERMISSION_GRANTED) {
+                    mMap.setMyLocationEnabled(true);
+                } else {
+                    // Show rationale and request permission.
+                    Context context = getApplicationContext();
+                    CharSequence text = "Location services disabled!";
+                    int duration = Toast.LENGTH_SHORT;
+
+                    Toast toast = Toast.makeText(context, text, duration);
+                    toast.show();
+                }
 
                 Log.d(TAG, "Map fully loaded.");
             }
