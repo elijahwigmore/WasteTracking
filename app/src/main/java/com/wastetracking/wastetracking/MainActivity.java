@@ -403,7 +403,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         textView.setText(builder.toString());
     }
 
-    private ArrayList<String> getAllAddressNames() {
+    public ArrayList<String> getAllAddressNames() {
         RealmResults<Address> results = mRealm.where(Address.class).findAll();
 
         ArrayList<String> addressNames = new ArrayList<String>();
@@ -417,7 +417,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         return addressNames;
     }
 
-    private ArrayList<String> getCollectedAddressNames() {
+    public ArrayList<String> getCollectedAddressNames() {
         ArrayList<String> rfidValues = getRFIDValuesForSelectedDate();
         return getAddressesForRFIDValues(rfidValues);
     }
