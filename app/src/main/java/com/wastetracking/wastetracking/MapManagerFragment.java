@@ -65,7 +65,7 @@ public class MapManagerFragment extends Fragment {
                 //Init GeoCoder
                 Geocoder gc = new Geocoder(getActivity().getApplicationContext());
                 //Get list of addresses as strings
-                ArrayList<String> addresses_list = ((MainActivity) getActivity()).getAddresses();
+                ArrayList<String> addresses_list = ((MainActivity) getActivity()).getMissingAddressNames();
                 //List for addresses
                 ArrayList<Address> list = new ArrayList<Address>();
                 //Latlong for list

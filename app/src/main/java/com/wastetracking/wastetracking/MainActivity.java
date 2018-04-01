@@ -17,7 +17,6 @@ import android.os.Vibrator;
 import android.support.v4.view.PagerAdapter;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -57,7 +56,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
 
     private ListView mListView;
     private NfcAdapter mNfcAdapter;
-    ArrayAdapter<String> mArrayAdapter;
+    CustomAdapter mCustomAdapter;
 
     private DeviceLocationManager mDeviceLocationManager;
 
@@ -260,11 +259,17 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
             if (hasPushed) {
                 String location = mDeviceLocationManager.getLocationString();
 
-                mParsedScanData.add(getParsedResult(Utility.getCurrentTimeStamp(), converted_string, location));
-                mArrayAdapter.notifyDataSetChanged();
+                String address = getAddressFromRFIDValue(converted_string);
+                if (mCustomAdapter.addCollectedAddress(address)) {
+                    mCustomAdapter.notifyDataSetChanged();
+                    updateMissingBinsText();
 
-                // vibrate phone and show snackbar
-                notifyUserScanSuccessful();
+                    notifyUserScanSuccessful();
+                }
+                else {
+                    notifyUserScanDuplicate();
+                }
+
                 setFragmentPage(0);
             }
             else {
@@ -349,27 +354,28 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
     }
 
     private void updateDisplayedData() {
-        mParsedScanData = getParsedRealmScanDataForSelectedDate();
+        mParsedScanData = getAllAddressNames();
         setArrayAdapter();
-
-        setMissingBinsText();
+        updateMissingBinsText();
     }
 
     private void setArrayAdapter() {
-        mArrayAdapter = new ArrayAdapter<String>(
+        mCustomAdapter = new CustomAdapter(
                 this, android.R.layout.simple_list_item_1, mParsedScanData
         );
 
-        mListView.setAdapter(mArrayAdapter);
+        mCustomAdapter.setCollectedAddresses(getCollectedAddressNames());
+
+        mListView.setAdapter(mCustomAdapter);
     }
 
-    private void setMissingBinsText() {
+    private void updateMissingBinsText() {
         TextView textView = (TextView) findViewById(R.id.listview_header);
         long addressCount = mRealm.where(Address.class).count();
 
         StringBuilder builder = new StringBuilder();
         builder.append("Missing bins - (")
-                .append(mArrayAdapter.getCount())
+                .append(mCustomAdapter.getCount() - mCustomAdapter.getCollectedAddressCount())
                 .append("/")
                 .append(addressCount)
                 .append(")");
@@ -377,11 +383,23 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         textView.setText(builder.toString());
     }
 
-    private ArrayList<String> getParsedRealmScanDataForSelectedDate() {
+    private ArrayList<String> getAllAddressNames() {
+        RealmResults<Address> results = mRealm.where(Address.class).findAll();
+
+        ArrayList<String> addressNames = new ArrayList<String>();
+        for (Address result : results) {
+            String addressName = result.getAddress();
+            if (!addressNames.contains(addressName)) {
+                addressNames.add(addressName);
+            }
+        }
+
+        return addressNames;
+    }
+
+    private ArrayList<String> getCollectedAddressNames() {
         ArrayList<String> rfidValues = getRFIDValuesForSelectedDate();
         return getAddressesForRFIDValues(rfidValues);
-
-        // return getParsedScanDataFromRealmData(results);
     }
 
     private ArrayList<String> getRFIDValuesForSelectedDate() {
@@ -418,22 +436,22 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
 
     private ArrayList<String> getAddressesForRFIDValues(ArrayList<String> rfidValues) {
         // only use this if we are listing scanned addresses, instead we are listing unscanned addresses
-//        if (rfidValues.size() == 0){
-//            return new ArrayList<String>();
-//        }
+        if (rfidValues.size() == 0){
+            return new ArrayList<String>();
+        }
 
         RealmQuery<Address> addressQuery = mRealm.where(Address.class);
         int i = 0;
         for (String rfidValue : rfidValues) {
             if (i > 0) {
-                addressQuery = addressQuery.and(); // use .or() for listing scanned addresses
+                addressQuery = addressQuery.or();
             }
-            addressQuery = addressQuery.notEqualTo("RFIDValue", rfidValue); // use equalTo for listing scanned addresses
+            addressQuery = addressQuery.equalTo("RFIDValue", rfidValue);
             i++;
         }
 
         RealmResults<Address> addressObjects = addressQuery.findAll();
-        addresses = new ArrayList<String>();
+        ArrayList<String> addresses = new ArrayList<String>();
         for (Address addressObj : addressObjects) {
             addresses.add(addressObj.getAddress());
         }
@@ -441,38 +459,60 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         return addresses;
     }
 
-    public ArrayList<String> getAddresses() {
-        return addresses;
+    private String getAddressFromRFIDValue(String rfidValue) {
+        ArrayList<String> singleRFIDList = new ArrayList<String>();
+        singleRFIDList.add(rfidValue);
+
+        ArrayList<String> singleAddressList =  getAddressesForRFIDValues(singleRFIDList);
+        if (singleAddressList.size() > 0)
+            return singleAddressList.get(0);
+        else
+            return "";
     }
 
-    private ArrayList<String> getParsedScanDataFromRealmData(RealmResults<RFIDScan> results) {
-        ArrayList<String> parsedResults = new ArrayList<String>();
-        for (RFIDScan scan : results) {
-            parsedResults.add(getParsedResult(scan));
+    public ArrayList<String> getMissingAddressNames() {
+        ArrayList<String> addressNames = getAllAddressNames();
+        ArrayList<String> collectedAddressNames = getCollectedAddressNames();
+
+        for (String addressName : collectedAddressNames) {
+            addressNames.remove(addressName);
         }
-        return parsedResults;
+
+        return addressNames;
     }
 
-    private String getParsedResult(RFIDScan scan) {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        String timestampStr = sdf.format(scan.getTimestamp());
+//    public ArrayList<String> getAddresses() {
+//        return addresses;
+//    }
 
-        return getParsedResult(timestampStr,
-                               scan.getRFIDValue(),
-                               mDeviceLocationManager.getLocationString());
-    }
-
-    private String getParsedResult(String timestamp, String RFIDValue, String location) {
-        return timestamp + "\n\n" +
-                "Tag Value: " + RFIDValue + "\n" +
-                "Location: " + location;
-    }
+//    private String getParsedResult(RFIDScan scan) {
+//        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+//        String timestampStr = sdf.format(scan.getTimestamp());
+//
+//        return getParsedResult(timestampStr,
+//                               scan.getRFIDValue(),
+//                               mDeviceLocationManager.getLocationString());
+//    }
+//
+//    private String getParsedResult(String timestamp, String RFIDValue, String location) {
+//        return timestamp + "\n\n" +
+//                "Tag Value: " + RFIDValue + "\n" +
+//                "Location: " + location;
+//    }
 
     private void notifyUserScanSuccessful() {
         int vibrationLengthMilliseconds = 750;
         vibratePhone(vibrationLengthMilliseconds);
 
         String snackbarText = "Scan Successful";
+        displaySnackbar(snackbarText);
+    }
+
+    private void notifyUserScanDuplicate() {
+        long[] vibrationPattern = {0, 250, 250, 250};
+        vibratePhone(vibrationPattern);
+
+        String snackbarText = "Duplicate RFID Tag";
         displaySnackbar(snackbarText);
     }
 
@@ -484,6 +524,11 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
             //deprecated in API 26
             v.vibrate(lengthMilliseconds);
         }
+    }
+
+    private void vibratePhone(long[] vibratePattern) {
+        Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        v.vibrate(vibratePattern, -1);
     }
 
     private void displaySnackbar(String text) {
