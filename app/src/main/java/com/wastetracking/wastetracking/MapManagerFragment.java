@@ -16,6 +16,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
@@ -66,22 +67,42 @@ public class MapManagerFragment extends Fragment {
                 Geocoder gc = new Geocoder(getActivity().getApplicationContext());
                 //Get list of addresses as strings
                 ArrayList<String> addresses_list = ((MainActivity) getActivity()).getMissingAddressNames();
+                ArrayList<String> addresses_collected_list = ((MainActivity) getActivity()).getCollectedAddressNames();
                 //List for addresses
                 ArrayList<Address> list = new ArrayList<Address>();
+                ArrayList<Address> collected_list = new ArrayList<Address>();
                 //Latlong for list
                 LatLng temp_LL = null;
 
                 try
                 {
+                    //Find and mark collected addresses
+                    for (String address_string : addresses_collected_list) {
+                        collected_list.add(gc.getFromLocationName(address_string, 1).get(0));
+                        Log.d(TAG, "First collected loop: " + address_string);
+                    }
+                    for (Address gc_address : collected_list){
+                        temp_LL = new LatLng(gc_address.getLatitude(), gc_address.getLongitude());
+                        mMap.addMarker(new MarkerOptions()
+                                .position(temp_LL)
+                                .title("Collected")
+                                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
+                        );
+                        Log.d(TAG, "First loop: " + gc_address.toString());
+                    }
+
+                    //Find and mark uncollected addresses
                     for (String address_string : addresses_list) {
                         list.add(gc.getFromLocationName(address_string, 1).get(0));
                         Log.d(TAG, "First loop: " + address_string);
                     }
-                    //List<Address> list = gc.getFromLocationName("16 Criscoe St, York, ON", 1);
                     for (Address gc_address : list){
                         temp_LL = new LatLng(gc_address.getLatitude(), gc_address.getLongitude());
-                        mMap.addMarker(new MarkerOptions().position(temp_LL).title("Trash"));
-
+                        mMap.addMarker(new MarkerOptions()
+                                .position(temp_LL)
+                                .title("Trash")
+                                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ROSE))
+                        );
                         Log.d(TAG, "First loop: " + gc_address.toString());
                     }
                 } catch (IOException e){
@@ -90,13 +111,10 @@ public class MapManagerFragment extends Fragment {
 
                 // Add a marker in Sydney and move the camera
                 LatLng Toronto = new LatLng(43.6532, -79.3832);
-                //mMap.addMarker(new MarkerOptions().position(Home).title("Home?"));
-                mMap.addMarker(new MarkerOptions().position(Toronto).title("Marker in Toronto"));
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(Toronto));
                 mMap.animateCamera(CameraUpdateFactory.zoomTo(10));
 
-                //CameraPosition cameraPosition = new CameraPosition.Builder().target(sydney).zoom(12).build();
-                //googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+                mMap.setMyLocationEnabled(true);
 
                 Log.d(TAG, "Map fully loaded.");
             }
