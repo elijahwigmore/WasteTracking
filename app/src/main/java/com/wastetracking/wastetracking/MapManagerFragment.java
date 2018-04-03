@@ -28,6 +28,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import static io.realm.internal.SyncObjectServerFacade.getApplicationContext;
 
@@ -100,8 +101,28 @@ public class MapManagerFragment extends Fragment {
 
                     //Find and mark uncollected addresses
                     for (String address_string : addresses_list) {
-                        list.add(gc.getFromLocationName(address_string, 1).get(0));
-                        Log.d(TAG, "First loop: " + address_string);
+                        Log.d(TAG, "Attempting address : " + address_string);
+
+                        // Geocoders can sometimes fail to return an andress. Use the backup
+                        ArrayList<com.wastetracking.wastetracking.Model.Address> possibleAddresses =
+                                ((MainActivity) getActivity()).getObjFromAddressName(address_string);
+
+                        // Just take the first one out of all possible addresses for now
+                        try {
+                            String lat = possibleAddresses.get(0).getLat();
+                            String lon = possibleAddresses.get(0).getLon();
+
+                            Locale current = getResources().getConfiguration().locale;
+                            Address secondaryAddress = new Address(current);
+                            secondaryAddress.setLatitude(Double.parseDouble(lat));
+                            secondaryAddress.setLongitude(Double.parseDouble(lon));
+
+                            list.add(secondaryAddress);
+                        } catch (Exception e2){
+                            Log.e(TAG, "Failed to resolve address!");
+                            Log.e(TAG, e2.toString());
+                        }
+
                     }
                     for (Address gc_address : list){
                         temp_LL = new LatLng(gc_address.getLatitude(), gc_address.getLongitude());

@@ -92,6 +92,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
 
     //Addresses
     public ArrayList<String> addresses;
+    RealmResults<Address> mCurrentRealmAddresses;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -364,7 +365,12 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
 
         mListView = (ListView) findViewById(R.id.listview_scan_log);
 
-        updateDisplayedData();
+        try {
+            updateDisplayedData();
+        } catch (Exception e) {
+            Log.e(TAG, "setupListView()");
+            Log.e(TAG, e.toString());
+        }
     }
 
     private void setupCalendar() {
@@ -416,6 +422,34 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
 
         return addressNames;
     }
+
+
+    public ArrayList<Address> getObjFromAddressName(String addressName) {
+
+        try {
+            if (mCurrentRealmAddresses == null) {
+                mCurrentRealmAddresses = mRealm.where(Address.class)
+                        .findAll();
+            }
+
+            // There can be multiple addresses with the same name (e.g. in the US), therefore return all
+            ArrayList<Address> sameNameAddresses = new ArrayList<Address>();
+            for (Address address : mCurrentRealmAddresses) {
+                if (address.getAddress().equals(addressName)) {
+                    sameNameAddresses.add(address);
+                }
+            }
+
+            return sameNameAddresses;
+
+        } catch (Exception e) {
+            Log.e(TAG, "getObjFromAddressName()");
+            Log.e(TAG, e.toString());
+        }
+
+        return null;
+    }
+
 
     public ArrayList<String> getCollectedAddressNames() {
         ArrayList<String> rfidValues = getRFIDValuesForSelectedDate();
